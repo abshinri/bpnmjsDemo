@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, provide } from "vue";
 import bpmn from "./components/bpmn.vue";
 
-import { xmlStr } from "@/mock/xmlStr";
-const xml = ref(xmlStr);
+
+const xml = ref(null);
 const users = ref([
   { name: "张三", id: "zhangsan" },
   { name: "李四", id: "lisi" },
@@ -21,6 +21,10 @@ const categorys = ref([
 const saveModeler = (data: any) => {
   console.log(data);
 };
+
+//bpmn核心实例
+const modeler = ref<any>(null);
+provide("modeler", modeler);
 </script>
 
 <template>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, defineProps } from "vue";
+import { ref, onMounted, defineProps, inject } from "vue";
 
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import panel from "./panel/index.vue";
 
-import flowableModdle from "@/libs/flowable.json";
-import { xmlStr } from "@/mock/xmlStr";
-import customTranslate from "@/libs/customTranslate";
+import flowableModdle from "./common/flowable.json";
+import getInitStr from "./common/init";
+import customTranslate from "./common/customTranslate";
 
 import type { UploadFile } from "element-plus";
 import { ElMessage } from "element-plus";
@@ -15,42 +15,75 @@ const props = defineProps(["users", "groups", "categorys", "xml", "isView"]);
 
 const bpmnCanvasRef = ref(null);
 const saveXmlRef = ref(null);
-const modeler = ref<typeof BpmnModeler>(null);
-const createNewDiagram = async () => {
-  try {
-    const result = await modeler.value.importXML(xmlStr(), (err: any) => {
-      if (err) {
-        // console.error(err)
-      } else {
-        // 这里是成功之后的回调, 可以在这里做一系列事情
-        cacheCurrentBpmnToXml((err: any, xml: any) => {
-          generateData(saveXmlRef.value, "test.xml", err ? null : xml);
-        });
 
-        // 每当画布发生变化时, 会触发这个事件
-        modeler.value.on("commandStack.changed", () => {
-          cacheCurrentBpmnToXml((err: any, xml: any) => {
-            generateData(saveXmlRef.value, "test.xml", err ? null : xml);
-          });
-        });
-      }
-    });
+const modeler = inject<typeof BpmnModeler>("modeler");
+
+const createNewDiagram = async (data: string) => {
+  data = data.replace(/<!\[CDATA\[(.+?)]]>/g, function (match, str) {
+    return str.replace(/</g, "&lt;");
+  });
+  try {
+    const result = await modeler.value.importXML(data);
     const { warnings } = result;
+    console.log("createNewDiagram");
     console.log(warnings);
+
+    // 初始化
+    cacheCurrentBpmnToXml((xml: any) => {
+      generateData(saveXmlRef.value, "test.xml", xml);
+    });
+
+    // 每当画布发生变化时, 会触发这个事件
+    modeler.value.on("commandStack.changed", () => {
+      cacheCurrentBpmnToXml((xml: any) => {
+        generateData(saveXmlRef.value, "test.xml", xml);
+      });
+    });
+
+    // const result = await modeler.value.importXML(data);
+    // const { warnings } = result;
+    // console.log(warnings);
+    // if (warnings) {
+    //   ElMessage.error(warnings);
+    // } else {
+    //   // 这里是成功之后的回调, 可以在这里做一系列事情
+    //   cacheCurrentBpmnToXml((err: any, xml: any) => {
+    //     generateData(saveXmlRef.value, "test.xml", err ? null : xml);
+    //   });
+
+    //   // 每当画布发生变化时, 会触发这个事件
+    //   modeler.value.on("commandStack.changed", () => {
+    //     cacheCurrentBpmnToXml((err: any, xml: any) => {
+    //       generateData(saveXmlRef.value, "test.xml", err ? null : xml);
+    //     });
+    //   });
+    // }
   } catch (err: any) {
-    console.log(err.message, err.warnings);
+    ElMessage.error(err.message, err.warnings);
   }
+  // const events = [
+  //   "shape.added",
+  //   "shape.move.end",
+  //   "shape.removed",
+  //   "connect.end",
+  //   "connect.move",
+  // ];
+  // events.forEach(function (event) {
+  //   modeler.value.on(event, (e: any) => {
+  //     console.log(event, e);
+  //     var elementRegistry = modeler.value.get("elementRegistry");
+  //     var shape = e.element ? elementRegistry.get(e.element.id) : e.shape;
+  //     console.log("events.forEach");
+  //     console.log(shape);
+  //   });
+  // });
 };
 
 // 当前内容转换为XML
-const generateData = (
-  link: any,
-  name: string,
-  data: string | number | boolean
-) => {
-  const encodedData = encodeURIComponent(data);
-  let xmlFile = new File([data as BlobPart], "test.xml");
-  console.log(xmlFile);
+const generateData = (link: any, name: string, data: { xml: string }) => {
+  console.log("generateData");
+  console.log(data);
+  const encodedData = encodeURIComponent(data.xml);
   if (data) {
     link.className = "downloadXml active";
     link.href = "data:application/bpmn20-xml;charset=UTF-8," + encodedData;
@@ -59,18 +92,19 @@ const generateData = (
 };
 
 // 缓存当前的XML
-const cacheCurrentBpmnToXml = (cb: Function) => {
-  modeler.value.saveXML({ format: true }, function (err: any, xml: any) {
-    cb(err, xml);
-  });
+const cacheCurrentBpmnToXml = async (cb: Function) => {
+  try {
+    await modeler.value.saveXML({ format: true }).then((res: any) => {
+      cb(res);
+    });
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 onMounted(() => {
   modeler.value = new BpmnModeler({
     container: bpmnCanvasRef.value,
-    propertiesPanel: {
-      parent: "#js-properties-panel",
-    },
     additionalModules: [
       {
         translate: ["value", customTranslate],
@@ -80,7 +114,12 @@ onMounted(() => {
       flowable: flowableModdle,
     },
   });
-  createNewDiagram();
+  // 新增流程定义
+  if (!props.xml) {
+    createNewDiagram(getInitStr());
+  } else {
+    createNewDiagram(props.xml);
+  }
 });
 </script>
 

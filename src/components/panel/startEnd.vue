@@ -1,19 +1,30 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { ref, reactive, watch } from "vue";
+import type { FormItem, Category } from "@/types/bpmn";
 import type { FormInstance, FormRules } from "element-plus";
-interface FormItem {
-  type: string;
-  name: string;
-  label?: string;
-  rules?: any;
-}
+import mixinPanel from "./mixins/panel";
+import { commonParse } from "./libs/parseElement";
+const props = defineProps([
+  "users",
+  "groups",
+  "categorys",
+  "modeler",
+  "element",
+]);
 
+const formData = ref<any>({});
+const { showConfig, updateProperties } = mixinPanel(props, formData);
 const items: Array<FormItem> = [
   {
     type: "input",
     name: "id",
     label: "节点 id",
     rules: [{ required: true, message: "Id 不能为空" }],
+  },
+  {
+    type: "input",
+    name: "name",
+    label: "节点名称",
   },
   {
     type: "input",
@@ -25,23 +36,65 @@ const items: Array<FormItem> = [
     name: "executionListener",
     label: "执行监听器",
   },
+  {
+    type: "input",
+    name: "initiator",
+    label: "发起人",
+    show: !!showConfig["initiator" as keyof typeof showConfig],
+  },
+  {
+    type: "input",
+    name: "formKey",
+    label: "表单标识key",
+    show: !!showConfig["formKey" as keyof typeof showConfig],
+  },
 ];
 
-const formData = reactive<any>({});
+const formRef = ref<FormInstance>();
+const formRules = reactive<FormRules>({});
+
 items.forEach((item: FormItem) => {
-  formData[item.name] = "";
+  formData.value[item.name] = "";
+  if (item.rules) {
+    formRules[item.name] = item.rules;
+  }
 });
+
+formData.value = commonParse(props.element);
+
+watch(
+  () => formData.value.initiator,
+  (val: any) => {
+    if (val === "") val = null;
+    updateProperties({ "flowable:initiator": val });
+  }
+);
+watch(
+  () => formData.value.formKey,
+  (val: any) => {
+    if (val === "") val = null;
+    updateProperties({ "flowable:formKey": val });
+  }
+);
 </script>
 
 <template>
   <div id="bpmp-startEnd">
     <div class="form-container">
-      <el-form :model="formData" label-width="120px">
-        <el-form-item v-for="item in items" :label="item.label">
+      <el-form
+        :model="formData"
+        ref="formRef"
+        :rules="formRules"
+        label-width="120px"
+      >
+        <el-form-item
+          v-for="item in items"
+          :label="item.label"
+          :prop="item.name"
+        >
           <el-input
             v-if="item.type === 'input'"
-            v-model="formData.id"
-            placeholder="Please input"
+            v-model="formData[item.name]"
           />
         </el-form-item>
       </el-form>

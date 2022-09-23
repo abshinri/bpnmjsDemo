@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NodeName } from "@/libs/zh";
+import { NodeName } from "../common/zh";
 import { ref, defineProps, computed, nextTick, onMounted } from "vue";
 
 import taskPanel from "./task.vue";
@@ -36,7 +36,7 @@ const nodeName = computed(() => {
     const type = bizObj?.eventDefinitions
       ? bizObj.eventDefinitions[0].$type
       : bizObj.$type;
-    return NodeName[type] || type;
+    return NodeName[type as keyof typeof NodeName] || type;
   }
   return "";
 });
@@ -92,16 +92,17 @@ const handleModeler = () => {
   props.modeler.on("root.added", (e: any) => {
     if (e.element.type === "bpmn:Process") {
       element.value = null;
+      console.log(e.element);
       nextTick(() => {
         element.value = e.element;
       });
     }
   });
   props.modeler.on("element.click", (e: any) => {
-    const { element } = e;
-    console.log(element);
-    if (element.type === "bpmn:Process") {
-      element.value = element;
+    if (e.element.type === "bpmn:Process") {
+      nextTick(() => {
+        element.value = e.element;
+      });
     }
   });
   props.modeler.on("selection.changed", (e: any) => {
