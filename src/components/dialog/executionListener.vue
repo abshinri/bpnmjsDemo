@@ -1,10 +1,25 @@
 <script setup lang="ts">
-import { defineProps, reactive, ref } from "vue";
+import { defineProps, reactive, ref, defineEmits } from "vue";
 
-const props = defineProps(["visible", "closeDialog", "close"]);
+import { ElMessage, ElMessageBox } from "element-plus";
+const props = defineProps(["visible", "closeDialog"]);
+const emits = defineEmits(["close"]);
+const tableRulesRef = ref();
 
-const closeDialog = () => {
-  props.close();
+const closeDialog = async () => {
+  if (tableData.data.length > 0) {
+    try {
+      await tableRulesRef.value?.validate();
+
+      emits("close");
+      return tableData.data;
+    } catch (error) {
+      ElMessage.error("请检查拓展字段信息填写情况");
+      return false;
+    }
+  } else {
+    emits("close");
+  }
 };
 // 新增一条数据
 const addData = () => {
@@ -22,9 +37,9 @@ const tableData = reactive<any>({
     {
       prop: "event",
       width: "",
-      label: "字段名",
+      label: "事件",
       isRequired: true,
-      type: "chname",
+      type: "select",
       dic: [
         { label: "start", value: "start" },
         { label: "end", value: "end" },
@@ -34,16 +49,27 @@ const tableData = reactive<any>({
     {
       prop: "type",
       width: "",
-      label: "字段英文名",
+      label: "类型",
       isRequired: true,
-      type: "input",
+      type: "select",
       dic: [
         { label: "类", value: "class" },
         { label: "表达式", value: "expression" },
         { label: "委托表达式", value: "delegateExpression" },
       ],
+      tooltip: `类：示例 com.company.MyCustomListener，自定义类必须实现 org.flowable.engine.delegate.TaskListener 接口 <br />
+                              表达式：示例 \${myObject.callMethod(task, task.eventName)} <br />
+                              委托表达式：示例 \${myListenerSpringBean} ，该 springBean 需要实现 org.flowable.engine.delegate.TaskListener 接口
+                    `,
     },
-    { prop: "className", width: "", label: "字段规则样例", type: "input" },
+    {
+      prop: "className",
+      width: "",
+      label: "java 类名",
+      type: "input",
+      isRequired: true,
+    },
+    { prop: "", width: "100px", label: "参数", type: "params" },
     { prop: "", width: "100px", label: "操作", type: "operate" },
   ],
 });
@@ -71,7 +97,6 @@ const getRules = (item: any) => {
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="false"
-    @closed="closeDialog()"
   >
     <el-button @click="addData">新增数据</el-button>
     <el-form ref="tableRulesRef" :model="tableData" size="default">
@@ -90,7 +115,16 @@ const getRules = (item: any) => {
         >
           <template v-slot:header>
             <span v-if="item.isRequired" class="color-danger">*</span>
+
             <span class="pl5" style="color: #333">{{ item.label }}</span>
+            <el-tooltip
+              v-if="item.tooltip"
+              :content="item.tooltip"
+              placement="top"
+              effect="light"
+            >
+              ?
+            </el-tooltip>
           </template>
           <template v-slot="scope">
             <el-form-item
@@ -112,35 +146,15 @@ const getRules = (item: any) => {
                 />
               </el-select>
 
-              <el-tooltip
-                v-else-if="item.type === 'input'"
-                :content="scope.row[item.prop]"
-                placement="top"
-                effect="light"
-              >
-                <el-input
-                  v-model="scope.row[item.prop]"
-                  placeholder="请输入内容"
-                />
-              </el-tooltip>
-              <el-input-number
-                v-else-if="item.type === 'input-number'"
-                :min="1"
-                :max="255"
-                v-model="scope.row[item.prop]"
-                placeholder="请输入内容"
-                controls-position="right"
-              />
               <el-input
-                v-else-if="item.type === 'dialog'"
+                v-if="item.type === 'input'"
                 v-model="scope.row[item.prop]"
-                readonly
                 placeholder="请输入内容"
-              >
-                <template v-slot:suffix>
-                  <i class="iconfont icon-shouye_dongtaihui" />
-                </template>
-              </el-input>
+              />
+
+              <div class="ta-c" v-else-if="item.type === 'params'">
+                <el-button size="small" link type="primary">配置</el-button>
+              </div>
               <div class="ta-c" v-else-if="item.type === 'operate'">
                 <el-button
                   size="small"

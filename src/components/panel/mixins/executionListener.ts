@@ -9,6 +9,7 @@ export default (element: any) => {
       element.businessObject.extensionElements?.values?.length ?? 0;
   };
   const finishExecutionListener = () => {
+    alert("finishExecutionListener");
     if (dialogName.value === "executionListenerDialog") {
       computedExecutionListenerLength();
     }
