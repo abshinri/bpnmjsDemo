@@ -1,0 +1,29 @@
+#bpnm-panel {
+  background: hsl(225, 10%, 97%);
+  border-left: solid 1px hsl(225, 10%, 75%);
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  $ph: 20px;
+  height: calc(100vh - $ph * 2);
+  padding: $ph 20px;
+  // reset element css
+  .el-form--label-top .el-form-item__label {
+    padding: 0;
+  }
+  .el-form-item {
+    margin-bottom: 6px;
+  }
+  .tab-table .el-form-item {
+    margin-bottom: 16px;
+  }
+  .node-name {
+    border-bottom: 1px solid #ccc;
+    padding: 0 0 10px 20px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #444;
+  }
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from "vue";
-import type { FormItem, Category } from "@/types/bpmn";
+import type { FormItem, Category } from "@/interface/bpmn";
 import type { FormInstance, FormRules } from "element-plus";
 import mixinPanel from "./mixins/panel";
 import { commonParse } from "./libs/parseElement";

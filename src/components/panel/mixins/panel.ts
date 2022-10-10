@@ -12,6 +12,9 @@ export default (props: any, formData: any) => {
     const eventElement = elementRegistry.get(element.value.id);
 
     const modeling = modeler.value.get("modeling");
+
+    console.log('updateProperties')
+    console.log(properties)
     modeling.updateProperties(eventElement, properties);
   };
 

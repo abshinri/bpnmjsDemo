@@ -123,7 +123,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="bpnml-panel">
+  <div id="bpnm-panel">
     <div class="node-name" v-if="nodeName">{{ nodeName }}</div>
     <component
       v-if="element && getComponent"
@@ -138,31 +138,5 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-#bpnml-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  $ph: 20px;
-  height: calc(100vh - $ph * 2);
-  padding: $ph 20px;
-  // reset element css
-  .el-form--label-top .el-form-item__label {
-    padding: 0;
-  }
-  .el-form-item {
-    margin-bottom: 6px;
-  }
-  .tab-table .el-form-item {
-    margin-bottom: 16px;
-  }
-  .node-name {
-    border-bottom: 1px solid #ccc;
-    padding: 0 0 10px 20px;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #444;
-  }
-}
+@import "@/assets/panel";
 </style>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue";
-import type { FormItem, Category, SelectType } from "@/types/bpmn";
+import type { FormItem, Category, SelectType } from "@/interface/bpmn";
 import type { FormInstance, FormRules } from "element-plus";
 import mixinPanel from "./mixins/panel";
+import mixinExecutionListener from "./mixins/executionListener";
 import { commonParse } from "./libs/parseElement";
+
 const props = defineProps([
   "users",
   "groups",
@@ -59,6 +61,8 @@ items.forEach((item: FormItem) => {
 formData.value = commonParse(props.element);
 
 const { updateProperties } = mixinPanel(props, formData);
+const { executionListenerDialog, dialogName, finishExecutionListener } =
+  mixinExecutionListener(props.element);
 
 watch(
   () => formData.value.processCategory,
@@ -99,7 +103,11 @@ watch(
             />
           </el-select>
           <el-badge v-if="item.name === 'executionListener'">
-            <el-button size="small">编辑</el-button>
+            <el-button
+              size="small"
+              @click="dialogName = 'executionListenerDialog'"
+              >编辑</el-button
+            >
           </el-badge>
           <el-badge v-if="item.name === 'signal'">
             <el-button size="small">编辑</el-button>
@@ -107,6 +115,12 @@ watch(
         </el-form-item>
       </el-form>
     </div>
+    <executionListenerDialog
+      :visible="dialogName === 'executionListenerDialog'"
+      :element="element"
+      :modeler="modeler"
+      @close="finishExecutionListener"
+    />
   </div>
 </template>
 

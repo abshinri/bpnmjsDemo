@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineProps, inject } from "vue";
+import { ref, onMounted, defineProps, inject, computed } from "vue";
 
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import panel from "./panel/index.vue";
@@ -7,6 +7,10 @@ import panel from "./panel/index.vue";
 import flowableModdle from "./common/flowable.json";
 import getInitStr from "./common/init";
 import customTranslate from "./common/customTranslate";
+import minimapModule from "diagram-js-minimap";
+import TokenSimulationModule from "bpmn-js-token-simulation";
+
+import customModule from "./common/customBpmnModules";
 
 import type { UploadFile } from "element-plus";
 import { ElMessage } from "element-plus";
@@ -106,6 +110,9 @@ onMounted(() => {
   modeler.value = new BpmnModeler({
     container: bpmnCanvasRef.value,
     additionalModules: [
+      customModule,
+      minimapModule,
+      TokenSimulationModule,
       {
         translate: ["value", customTranslate],
       },
@@ -120,11 +127,23 @@ onMounted(() => {
   } else {
     createNewDiagram(props.xml);
   }
+
+  // let minimap: any | null = null;
+  // const minimapStatus = computed(() => editor().getEditorConfig.miniMap)
+  // const minimapToggle = () => {
+  // !minimap && (minimap = modeler.value.get("minimap"));
+  // minimap && minimap.toggle();
+  // }
 });
+
+const toggleMode = () => {
+  modeler.value.get("toggleMode").toggleMode();
+};
 </script>
 
 <template>
   <div class="bpmn-container">
+    <el-button @click="toggleMode()">Default</el-button>
     <a class="downloadXml" href="javascript:" ref="saveXmlRef">保存XML</a>
     <div ref="bpmnCanvasRef" id="bpmnCanvas"></div>
     <panel
@@ -137,7 +156,11 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss">
+@import "../assets/canvas.scss";
+@import "diagram-js-minimap/assets/diagram-js-minimap.css";
+@import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
+
 .bpmn-container {
   width: 100%;
   height: 100%;
@@ -145,7 +168,13 @@ onMounted(() => {
 #bpmnCanvas {
   width: 100%;
   height: 100%;
+
+  .djs-minimap {
+    right: 350px;
+    z-index: 100;
+  }
 }
+
 .downloadXml {
   position: absolute;
   left: 30px;
